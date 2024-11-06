@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Globe with Country Flags</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #globeContainer {
+            width: 100vw;
+            height: 100vh;
+            background-color:black;
+            position: relative;
+        }
+
+        .flag {
+            position: absolute;
+            transform-origin: center;
+            transition: transform 0.3s ease, background-color 0.3s;
+            cursor: pointer;
+            font-size: clamp(8px, 1vw, 12px);
+            color: #fff;
+            padding: 5px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .flag:hover {
+            transform: scale(2.5);
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        #flagDisplay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 10;
+        }
+
+        #flagDisplay img {
+            width: 80px;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        #flagDisplay h2 {
+            font-size: 18px;
+            color: #333;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="globeContainer"></div>
+
+    <!-- Overlay and Flag Display -->
+    <div id="overlay"></div>
+    <div id="flagDisplay">
+        <img id="flagImage" src="" alt="Country Flag">
+        <h2 id="countryName">Country Name</h2>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Web Speech API setup
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 3D Globe Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('globeContainer').appendChild(renderer.domElement);
+
+        // Globe settings
+        const globeRadius = 10;
+        const globeGeometry = new THREE.SphereGeometry(globeRadius, 50, 50);
+        const globeMaterial = new THREE.MeshBasicMaterial({ color: 0x0066cc });
+        const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+        scene.add(globe);
+
+        camera.position.z = 30;
+
+        // Flag display elements
+        const flagDisplay = document.getElementById('flagDisplay');
+        const flagImage = document.getElementById('flagImage');
+        const countryNameElem = document.getElementById('countryName');
+        const overlay = document.getElementById('overlay');
+
+        // Sample countries with flags (add 256 countries here)
+        const countries = [
+            { name: 'United States', lat: 37.0902, lon: -95.7129, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/us.svg' },
+            { name: 'Canada', lat: 56.1304, lon: -106.3468, color: 'rgb(0,255,0)', flagUrl: 'https://flagcdn.com/ca.svg' },
+            { name: 'Brazil', lat: -14.2350, lon: -51.9253, color: 'rgb(0,0,255)', flagUrl: 'https://flagcdn.com/br.svg' },
+            { name: 'United Kingdom', lat: 55.3781, lon: -3.4360, color: 'rgb(255,255,0)', flagUrl: 'https://flagcdn.com/gb.svg' },
+            { name: 'Australia', lat: -25.2744, lon: 133.7751, color: 'rgb(0,255,255)', flagUrl: 'https://flagcdn.com/au.svg' },
+            { name: 'Afghanistan', lat: 33.93911, lon: 67.709953, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/af.svg' },
+            { name: 'Albania', lat: 41.1533, lon: 20.1683, color: 'rgb(0,255,0)', flagUrl: 'https://flagcdn.com/al.svg' },
+            { name: 'Algeria', lat: 28.0339, lon: 1.6596, color: 'rgb(255,255,0)', flagUrl: 'https://flagcdn.com/dz.svg' },
+            { name: 'Andorra', lat: 42.5063, lon: 1.5211, color: 'rgb(50,205,50)', flagUrl: 'https://flagcdn.com/ad.svg' },
+            { name: 'Angola', lat: -11.2027, lon: 17.8739, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/ao.svg' },
+            { name: 'Antigua and Barbuda', lat: 17.0608, lon: -61.7964, color: 'rgb(0,0,255)', flagUrl: 'https://flagcdn.com/ag.svg' },
+            { name: 'Argentina', lat: -38.4161, lon: -63.6167, color: 'rgb(0,255,255)', flagUrl: 'https://flagcdn.com/ar.svg' },
+            { name: 'Armenia', lat: 40.0691, lon: 45.0382, color: 'rgb(240,230,140)', flagUrl: 'https://flagcdn.com/am.svg' },
+            { name: 'Austria', lat: 47.5162, lon: 14.5501, color: 'rgb(60,179,113)', flagUrl: 'https://flagcdn.com/at.svg' },
+            { name: 'Azerbaijan', lat: 40.1431, lon: 47.5769, color: 'rgb(240,230,140)', flagUrl: 'https://flagcdn.com/az.svg' }
+
+        ];
+
+        // Convert latitude and longitude to 3D position
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            return new THREE.Vector3(
+                -radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        countries.forEach(country => {
+            const vector = latLonToVector3(country.lat, country.lon, globeRadius);
+
+            const flagElem = document.createElement('div');
+            flagElem.className = 'flag';
+            flagElem.textContent = country.name;
+            flagElem.style.backgroundColor = country.color;
+            document.body.appendChild(flagElem);
+
+            function updateFlagPosition() {
+                const vectorClone = vector.clone().project(camera);
+                const x = (0.5 + vectorClone.x / 2) * window.innerWidth;
+                const y = (0.5 - vectorClone.y / 2) * window.innerHeight;
+                flagElem.style.left = `${x}px`;
+                flagElem.style.top = `${y}px`;
+            }
+            updateFlagPosition();
+
+            flagElem.addEventListener('mouseenter', () => {
+                flagElem.style.transform = 'scale(2.5)';
+                speak(country.name);
+            });
+
+            flagElem.addEventListener('mouseleave', () => {
+                flagElem.style.transform = 'scale(1)';
+            });
+
+            flagElem.addEventListener('click', () => {
+                flagImage.src = country.flagUrl;
+                countryNameElem.textContent = country.name;
+                overlay.style.display = 'block';
+                flagDisplay.style.display = 'block';
+            });
+
+            scene.addEventListener('update', updateFlagPosition);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            globe.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        overlay.addEventListener('click', () => {
+            flagDisplay.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
