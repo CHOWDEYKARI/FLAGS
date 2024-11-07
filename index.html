@@ -12,8 +12,7 @@
             box-sizing: border-box;
         }
 
-        body,
-        html {
+        body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -23,7 +22,7 @@
         #globeContainer {
             width: 100vw;
             height: 100vh;
-            background-color:black;
+            background-color: black;
             position: relative;
         }
 
@@ -32,7 +31,7 @@
             transform-origin: center;
             transition: transform 0.3s ease, background-color 0.3s;
             cursor: pointer;
-            font-size: clamp(8px, 1vw, 12px);
+            font-size: clamp(8px, 1.5vw, 12px);
             color: #fff;
             padding: 5px;
             border-radius: 50%;
@@ -58,6 +57,8 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             text-align: center;
             z-index: 10;
+            max-width: 90%;
+            box-sizing: border-box;
         }
 
         #flagDisplay img {
@@ -68,8 +69,9 @@
         }
 
         #flagDisplay h2 {
-            font-size: 18px;
+            font-size: 1.2rem;
             color: #333;
+            margin: 10px 0;
         }
 
         #overlay {
@@ -82,13 +84,26 @@
             background-color: rgba(0, 0, 0, 0.7);
             z-index: 5;
         }
+
+        @media (max-width: 768px) {
+            #flagDisplay {
+                padding: 15px;
+            }
+
+            #flagDisplay img {
+                width: 60px;
+            }
+
+            .flag {
+                font-size: clamp(6px, 2vw, 10px);
+            }
+        }
     </style>
 </head>
 
 <body>
     <div id="globeContainer"></div>
 
-    <!-- Overlay and Flag Display -->
     <div id="overlay"></div>
     <div id="flagDisplay">
         <img id="flagImage" src="" alt="Country Flag">
@@ -97,7 +112,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Web Speech API setup
         function speak(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -105,14 +119,12 @@
             }
         }
 
-        // 3D Globe Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('globeContainer').appendChild(renderer.domElement);
 
-        // Globe settings
         const globeRadius = 10;
         const globeGeometry = new THREE.SphereGeometry(globeRadius, 50, 50);
         const globeMaterial = new THREE.MeshBasicMaterial({ color: 0x0066cc });
@@ -121,33 +133,16 @@
 
         camera.position.z = 30;
 
-        // Flag display elements
         const flagDisplay = document.getElementById('flagDisplay');
         const flagImage = document.getElementById('flagImage');
         const countryNameElem = document.getElementById('countryName');
         const overlay = document.getElementById('overlay');
 
-        // Sample countries with flags (add 256 countries here)
         const countries = [
             { name: 'United States', lat: 37.0902, lon: -95.7129, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/us.svg' },
             { name: 'Canada', lat: 56.1304, lon: -106.3468, color: 'rgb(0,255,0)', flagUrl: 'https://flagcdn.com/ca.svg' },
-            { name: 'Brazil', lat: -14.2350, lon: -51.9253, color: 'rgb(0,0,255)', flagUrl: 'https://flagcdn.com/br.svg' },
-            { name: 'United Kingdom', lat: 55.3781, lon: -3.4360, color: 'rgb(255,255,0)', flagUrl: 'https://flagcdn.com/gb.svg' },
-            { name: 'Australia', lat: -25.2744, lon: 133.7751, color: 'rgb(0,255,255)', flagUrl: 'https://flagcdn.com/au.svg' },
-            { name: 'Afghanistan', lat: 33.93911, lon: 67.709953, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/af.svg' },
-            { name: 'Albania', lat: 41.1533, lon: 20.1683, color: 'rgb(0,255,0)', flagUrl: 'https://flagcdn.com/al.svg' },
-            { name: 'Algeria', lat: 28.0339, lon: 1.6596, color: 'rgb(255,255,0)', flagUrl: 'https://flagcdn.com/dz.svg' },
-            { name: 'Andorra', lat: 42.5063, lon: 1.5211, color: 'rgb(50,205,50)', flagUrl: 'https://flagcdn.com/ad.svg' },
-            { name: 'Angola', lat: -11.2027, lon: 17.8739, color: 'rgb(255,0,0)', flagUrl: 'https://flagcdn.com/ao.svg' },
-            { name: 'Antigua and Barbuda', lat: 17.0608, lon: -61.7964, color: 'rgb(0,0,255)', flagUrl: 'https://flagcdn.com/ag.svg' },
-            { name: 'Argentina', lat: -38.4161, lon: -63.6167, color: 'rgb(0,255,255)', flagUrl: 'https://flagcdn.com/ar.svg' },
-            { name: 'Armenia', lat: 40.0691, lon: 45.0382, color: 'rgb(240,230,140)', flagUrl: 'https://flagcdn.com/am.svg' },
-            { name: 'Austria', lat: 47.5162, lon: 14.5501, color: 'rgb(60,179,113)', flagUrl: 'https://flagcdn.com/at.svg' },
-            { name: 'Azerbaijan', lat: 40.1431, lon: 47.5769, color: 'rgb(240,230,140)', flagUrl: 'https://flagcdn.com/az.svg' }
-
         ];
 
-        // Convert latitude and longitude to 3D position
         function latLonToVector3(lat, lon, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lon + 180) * (Math.PI / 180);
@@ -160,7 +155,6 @@
 
         countries.forEach(country => {
             const vector = latLonToVector3(country.lat, country.lon, globeRadius);
-
             const flagElem = document.createElement('div');
             flagElem.className = 'flag';
             flagElem.textContent = country.name;
@@ -174,15 +168,9 @@
                 flagElem.style.left = `${x}px`;
                 flagElem.style.top = `${y}px`;
             }
-            updateFlagPosition();
 
             flagElem.addEventListener('mouseenter', () => {
-                flagElem.style.transform = 'scale(2.5)';
                 speak(country.name);
-            });
-
-            flagElem.addEventListener('mouseleave', () => {
-                flagElem.style.transform = 'scale(1)';
             });
 
             flagElem.addEventListener('click', () => {
@@ -192,15 +180,14 @@
                 flagDisplay.style.display = 'block';
             });
 
-            scene.addEventListener('update', updateFlagPosition);
+            function animate() {
+                globe.rotation.y += 0.001;
+                updateFlagPosition();
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            }
+            animate();
         });
-
-        function animate() {
-            requestAnimationFrame(animate);
-            globe.rotation.y += 0.001;
-            renderer.render(scene, camera);
-        }
-        animate();
 
         overlay.addEventListener('click', () => {
             flagDisplay.style.display = 'none';
@@ -214,4 +201,5 @@
         });
     </script>
 </body>
+
 </html>
